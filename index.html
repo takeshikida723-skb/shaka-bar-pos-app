@@ -3,75 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易POSレジ（実運用版）</title>
+    <title>簡易POSレジ（スプレッドシート連携版）</title>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f9; margin: 0; padding: 10px; color: #333; display: flex; flex-direction: column; height: 95vh; }
-        
         .top-bar { display: flex; gap: 10px; margin-bottom: 10px; }
         .btn-add { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 14px; }
         .btn-add-m { background: #3f51b5; }
         .btn-add-f { background: #e91e63; }
-        
         .tabs-container { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 10px; border-bottom: 2px solid #ddd; margin-bottom: 10px; white-space: nowrap; }
         .tab { background: #e0e0e0; padding: 10px 15px; border-radius: 6px 6px 0 0; border: none; font-weight: bold; font-size: 14px; cursor: pointer; }
         .tab.active { background: #fff; border: 2px solid #673ab7; border-bottom: none; color: #673ab7; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
-
         #pos-area { display: none; flex-direction: column; flex-grow: 1; overflow: hidden; }
-
         .display { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 10px; }
         .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 18px; }
         .total { font-size: 28px; font-weight: bold; color: #e91e63; }
         .change { font-size: 24px; font-weight: bold; color: #2196f3; }
         .time-input { font-size: 16px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; }
         .elapsed-info { font-size: 14px; color: #ff9800; font-weight: bold; }
-        
         .history { height: 80px; overflow-y: auto; background: #eee; padding: 5px; border-radius: 4px; font-size: 12px; margin-bottom: 10px; }
         .history-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding: 4px 0; }
         .auto-extension-item { color: #d32f2f; font-weight: bold; }
-        .discount-item { color: #2e7d32; } /* 値引きは緑色で表示 */
-        
+        .discount-item { color: #2e7d32; }
         .payment-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 15px; }
         .btn-pay { background: #4caf50; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; }
-        
         .section-title { font-size: 14px; font-weight: bold; margin: 10px 0 5px; color: #673ab7; }
         .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-bottom: 10px;}
         .btn-menu { background: white; border: 1px solid #ddd; padding: 10px 5px; border-radius: 6px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .btn-menu div:first-child { font-size: 12px; font-weight: bold; }
         .btn-menu div:last-child { font-size: 11px; color: #666; }
-
-        /* 値引きボタン用スタイル */
         .btn-discount { border-color: #a5d6a7; background: #e8f5e9; }
         .btn-discount div:first-child { color: #2e7d32; }
         .btn-discount div:last-child { color: #2e7d32; font-weight: bold; }
-
         .custom-input-bar { display: flex; gap: 5px; margin-bottom: 10px; background: #e3f2fd; padding: 8px; border-radius: 6px; border: 1px solid #bbdefb; }
         .custom-input-bar input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         .input-name { flex: 3; }
         .input-price { flex: 2; }
         .btn-custom-add { flex: 1; background: #03a9f4; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; }
-        
         .action-grid { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 8px; margin-top: auto; padding-top: 10px;}
         .btn-action { padding: 12px 5px; border: none; border-radius: 6px; font-weight: bold; font-size: 13px; color: white; text-align: center;}
         .btn-undo { background: #ff9800; }
         .btn-rename { background: #607d8b; }
         .btn-checkout { background: #f44336; }
-        
         .empty-state { text-align: center; color: #999; margin-top: 50px; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div class="top-bar">
         <button class="btn-add btn-add-m" onclick="addCustomer('男性', 4000)">＋ 男性入店</button>
         <button class="btn-add btn-add-f" onclick="addCustomer('女性', 3000)">＋ 女性入店</button>
     </div>
-
     <div class="tabs-container" id="tabs-container"></div>
-
     <div id="empty-state" class="empty-state">
         お客さんがいません。<br>上の「入店」ボタンを押してください。
     </div>
-
     <div id="pos-area">
         <div class="display">
             <div class="row">
@@ -86,32 +70,26 @@
             <div class="row"><span>預かり:</span> <span>¥<span id="tendered-amount">0</span></span></div>
             <div class="row"><span>お釣り:</span> <span class="change">¥<span id="change-amount">0</span></span></div>
         </div>
-
         <div class="history" id="history-box"></div>
-
         <div class="payment-grid">
             <button class="btn-pay" onclick="addTendered(1000)">+千円</button>
             <button class="btn-pay" onclick="addTendered(5000)">+5千円</button>
             <button class="btn-pay" onclick="addTendered(10000)">+1万円</button>
             <button class="btn-pay" style="background:#4caf50;" onclick="exactTendered()">ちょうど</button>
         </div>
-
         <div style="overflow-y: auto; flex-grow: 1;">
-            
             <div class="section-title">値引き（クーポン・端数カット）</div>
             <div class="menu-grid">
                 <button class="btn-menu btn-discount" onclick="addOrder('500円クーポン', -500)"><div>500円引き</div><div>-¥500</div></button>
                 <button class="btn-menu btn-discount" onclick="addOrder('1000円クーポン', -1000)"><div>1000円引き</div><div>-¥1,000</div></button>
                 <button class="btn-menu btn-discount" onclick="addCustomDiscount()"><div>自由入力引</div><div>-¥---</div></button>
             </div>
-
             <div class="section-title">カスタム追加（イベント等）</div>
             <div class="custom-input-bar">
                 <input type="text" id="custom-name" class="input-name" placeholder="商品名 (空欄OK)">
                 <input type="number" id="custom-price" class="input-price" placeholder="金額 (円)">
                 <button class="btn-custom-add" onclick="addCustomOrder()">追加</button>
             </div>
-
             <div class="section-title">ショット・フード</div>
             <div class="menu-grid">
                 <button class="btn-menu" onclick="addOrder('クライナー', 700)"><div>クライナー</div><div>¥700</div></button>
@@ -122,7 +100,6 @@
                 <button class="btn-menu" onclick="addOrder('悟りチップ', 700)"><div>悟りチップ</div><div>¥700</div></button>
                 <button class="btn-menu" onclick="addOrder('煩悩芋', 900)"><div>煩悩芋</div><div>¥900</div></button>
             </div>
-
             <div class="section-title">シャンパン</div>
             <div class="menu-grid">
                 <button class="btn-menu" onclick="addOrder('モエ白ハーフ', 11000)"><div>モエ白H</div><div>¥11,000</div></button>
@@ -131,7 +108,6 @@
                 <button class="btn-menu" onclick="addOrder('ドンペリ白', 66000)"><div>ドンペリ白</div><div>¥66,000</div></button>
             </div>
         </div>
-
         <div class="action-grid">
             <button class="btn-action btn-undo" onclick="undoLast()">1つ取消</button>
             <button class="btn-action btn-rename" onclick="renameCustomer()">名前変更</button>
@@ -140,6 +116,9 @@
     </div>
 
 <script>
+    // ★★★ここに先ほどコピーしたURLを貼り付けます★★★
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyPjYRQY-bBzV8ZIf8D_ducf0Npo0I0kCQYJaWoMoKNwiQAI5aAo2bYDS-v7mScHycKaQ/exec";
+
     let customers = JSON.parse(localStorage.getItem('pos_customers')) || [];
     let activeIdRaw = localStorage.getItem('pos_activeId');
     let activeId = (activeIdRaw && activeIdRaw !== "null") ? parseInt(activeIdRaw) : null;
@@ -221,7 +200,6 @@
             alert("金額を正しく入力してください。");
             return;
         }
-
         let name = nameInput.trim() === "" ? "特別メニュー" : nameInput.trim();
         addOrder(name, priceInput);
 
@@ -229,7 +207,6 @@
         document.getElementById('custom-price').value = '';
     }
 
-    // 自由入力の値引き
     function addCustomDiscount() {
         let c = getActive();
         if(!c) return;
@@ -242,8 +219,6 @@
             alert("正しい金額を入力してください。");
             return;
         }
-        
-        // マイナスにして追加
         addOrder('特別値引き', -Math.abs(discount));
     }
 
@@ -275,6 +250,32 @@
         if(c.tendered < finalTotal) {
             if(!confirm("お預かり金が足りていませんが、精算を完了して伝票を消しますか？")) return;
         }
+
+        // --- スプレッドシートへのデータ送信 ---
+        if (GAS_URL && GAS_URL.startsWith("http")) {
+            let orderText = c.orders.map(o => `${o.name}(¥${o.price})`).join(", ");
+            let extInfo = getExtensionInfo(c.entryTime);
+            if (extInfo.count > 0) {
+                orderText += `, 自動延長${extInfo.count}回(¥${extInfo.fee})`;
+            }
+
+            let payload = {
+                name: c.name,
+                entryTime: c.entryTime,
+                totalAmount: finalTotal,
+                tendered: c.tendered,
+                orderDetails: orderText
+            };
+
+            // CORS制約を回避して裏側で送信する
+            fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(e => console.error("送信エラー", e));
+        }
+
         customers = customers.filter(cust => cust.id !== activeId);
         activeId = customers.length > 0 ? customers[0].id : null;
         updateUI();
@@ -310,7 +311,6 @@
     function calculateCurrentTotal(c) {
         let baseTotal = c.orders.reduce((sum, o) => sum + o.price, 0);
         let extInfo = getExtensionInfo(c.entryTime);
-        // 合計がマイナスにならないようにガード（必要であれば）
         let total = baseTotal + extInfo.fee;
         return total < 0 ? 0 : total;
     }
@@ -380,6 +380,5 @@
         }
     }
 </script>
-
 </body>
 </html>
